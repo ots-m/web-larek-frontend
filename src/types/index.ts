@@ -4,12 +4,11 @@ export interface IProduct {
 	image: string;
 	title: string;
 	category: string;
-	price: number;
+	price: number | null;
 }
 
 export interface IProductList {
   items: IProduct[];
-  total: number;
 }
 
 export interface IAppState {
@@ -32,8 +31,6 @@ export interface IContactData {
 }
 
 export interface IOrder {
-	itemsId: string[];
-	total: number;
 	payment: TPaymentMethod;
 	email: string;
 	phone: string;

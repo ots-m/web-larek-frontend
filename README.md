@@ -50,11 +50,10 @@ yarn build
 - image: string; - ссылка на изображение.
 - title: string; - заголовок.
 - category: string; - категория.
-- price: number; - цена.
+- price: number | null; - цена товара, некоторые товары могут быть 'бесценны'.
 
 `IProductList` - описывает каталог карточек товаров:
 - items: IProduct[]; - массив объектов товаров IProduct.
-- total: number; - общее число товаров
 
 `IAddressData` - интерфейс адреса и способа оплаты клиента:
 - address: string; - адрес доставки.
@@ -65,8 +64,6 @@ yarn build
 - phone: string; - номер телефона.
 
 `IOrder` - описывает структуру заказа:
-- itemsId: string[]; - коллекция id товаров, добавленных в заказ.
-- total: number; - сумма заказа.
 - payment: TPaymentMethod; - способ оплаты, TPaymentMethod простой тип основанный строками 'online', 'offline'.
 - email: string; - почта.
 - phone: string; - номер телефона.
