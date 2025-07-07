@@ -22,6 +22,16 @@ export abstract class Component<T> {
         }
     }
 
+    protected setPrice(element: HTMLElement, value: number | null): void {
+		if (element) {
+			if (value === null) {
+				this.setText(element, `Бесценно`);
+			} else {
+				this.setText(element, `${value} синапсов`);
+			}
+		}
+	}
+
     // Сменить статус блокировки
     setDisabled(element: HTMLElement, state: boolean) {
         if (element) {

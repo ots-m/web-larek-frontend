@@ -7,15 +7,12 @@ export interface IProduct {
 	price: number | null;
 }
 
-export interface IProductList {
-  items: IProduct[];
+export interface IBasketIndex extends IProduct {
+	index: number;
 }
 
-export interface IAppState {
-    catalog: IProduct[];
-    basket: IProduct[];
-    preview: string | null;
-    order: IOrder | null;
+export interface IProductList {
+  items: IProduct[];
 }
 
 export type TPaymentMethod = 'online' | 'offline';
@@ -36,3 +33,10 @@ export interface IOrder {
 	phone: string;
 	address: string;
 }
+
+export interface IOrderSuccess {
+	id: string;
+	total: number;
+}
+
+

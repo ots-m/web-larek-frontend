@@ -52,6 +52,9 @@ yarn build
 - category: string; - категория.
 - price: number | null; - цена товара, некоторые товары могут быть 'бесценны'.
 
+`IBasketIndex` - расширяет `IProduct` для индексации товаров в корзине:
+- index: number; - индекс.
+
 `IProductList` - описывает каталог карточек товаров:
 - items: IProduct[]; - массив объектов товаров IProduct.
 
@@ -68,6 +71,10 @@ yarn build
 - email: string; - почта.
 - phone: string; - номер телефона.
 - address: string; - адрес доставки.
+
+`IOrderSuccess` - описывает успешный ответ сервера при оформлении заказа
+- id: string - индентификатор заказа.
+- total: number - сумма заказа.
 
 ## Архитектура приложения
 Код приложения разделен на слои согласно парадигме MVP:
@@ -106,6 +113,8 @@ yarn build
 
 - `setText` - устанавливает текст элемента.
 
+- `setPrice` - устанавливает цену элементу.
+
 - `setDisabled` - включает или отключает элемент.
 
 - `setHidden` - скрывает элемент.
@@ -116,7 +125,16 @@ yarn build
 
 - `render` - Возвращает корневой DOM-элемент.
 
+
 ### Cлой данных (Model)
+
+#### Класс AppApi
+
+Расширяет базовый Api добавляя новые методы для работы с сервером.
+
+Методы класса: 
+- getProductCatalog(): Promise\<IProductList> - получаем список товаров с сервера.
+- sendOrder(order: IOrder): Promise\<IOrderSuccess> - отправляем данные заказы на сервер.
 
 #### Класс AppState
 
@@ -124,21 +142,22 @@ yarn build
  включающий в себя все основные данные для работы сайта.
 
 Поля класса:
-- catalog: IProduct[] - массив всех товаров.
-- basket: IProduct[] - товары в корзине.
-- preview: IProduct | null - товар для предпросмотра.
-- order: IOrder | null - данные заказа.
+- _catalog: IProduct[] - массив всех товаров.
+- _basket: IProduct[] - товары в корзине.
+- _order: object - данные заказа.
 
-Методы класс: 
+Методы класса: 
 - addToBasket(item: IProduct): void - добавляет товар в корзину
 - removeFromBasket(id: string): void - удаляет товар из корзины
+- isInBasket(id: string): boolean - проверяет не добавлен ли товар в корзину.
+- get basket(): IBasketIndex[] - получает список товаров в корзине.
 - clearBasket(): void; - очищает корзину.
 - getBasketTotal(): number; - возвращает сумму товаров в корзине.
 - getBasketCount(): number; - возвращает количество товаров в корзине.
-- setItems(items: IProduct[]): void; - заполнить каталог товарами.
-- setPreview(item: IProduct): void; - устанавливает товар для предпросмотра.
-- validate(): void - проверка на валидность данных заказа.
-- setOrderField(field: keyof IOrder, value: string): void - устанавливает поле заказа.
+- set catalog(items: IProduct[]) - установить список товаров в каталоге.
+- get catalog(): IProduct[] - получить список товаров в каталоге
+- set order(data: Partial\<IOrder>) - устанавливает данные заказа, частично или полностью.
+- get order() - возвращает данные заказа.
 
 ### Cлой отображения (View)
 
@@ -149,20 +168,21 @@ yarn build
 Поля класса:
 - catalogContainer: HTMLElement; - контейнер для каталога товаров.
 - basketCounter: HTMLElement; - счётчик товаров в корзине.
-- basketButton: HTMLElement; - кнопка корзины. 
-
+- basketButton: HTMLButtonElement; - кнопка корзины. 
+- _wrapper: HTMLElement; - обёртка страницы.
 Методы класс: 
-- setCatalog(items: IProduct[]): void; - отображает массив карточек товаров в каталог.
+- setCatalog(items: HTMLElement[]): void; - отображает массив карточек товаров в каталог.
 - setBasketCounter(count: number): void; - обновляет счётчик товаров.
+- set locked(value: boolean); устанавливает состояние блокировки интерфейса;
 
 #### Класс Card
 
 Отвечает за создание универсальных карточек товара. \
 В конструктор передается HTMLTemplateElement.
 
-Методы класс: 
+Методы класса: 
 - renderCard(data: IProduct): HTMLElement; - создает карточку для каталога.
-- renderPreview(data: IProduct): HTMLElement; - создает карточку для превью.
+- renderPreview(data: IProduct, isInBasket: boolean): HTMLElement; - создает карточку для превью.
 - renderBasket(data: IProduct): HTMLElement; - создает карточку для корзины.
 
 #### Класс AddressForm
@@ -170,73 +190,79 @@ yarn build
 Отображает форму с выбором способа оплаты и адреса клиента.
 
 Поля класса:
-- form: HTMLElement; - элемент формы.
 - errors: HTMLElement; - элемент ошибки.
 - addressInput: HTMLElement - поле адреса.
 - submitButton: HTMLElement - кнопка отправки формы.
 - OnlineMethod: HTMLElement - метод оплаты 'online'.
 - OfflineMethod: HTMLElement - метод оплаты 'offline'.
+- selectedPaymentMethod: TPaymentMethod | null - выбор типа оплаты.
 
-Методы класс:
-- onInputChange(field: keyof T, value: string): void; - обработка изменения в поле формы
+Методы класса:
+- selectPaymentMethod(method: TPaymentMethod): void - устанавливает классы элементов.
+- isAddressFilled(): boolean - проверяет, заполнен ли адрес.
+- isPaymentSelected(): boolean -  проверяет, выбран ли способ оплаты.
+- checkFormValidity(): void - проверяет валидность формы.
+- getFormData(): { address: string; payment: TPaymentMethod } - возвращает данные формы.
 - setErrors(value: string): void; - отображает сообщение ошибки.
 - validate(value: boolean): void; - изменяет состояние кнопки.
 - clear(): void; - очистка формы.
+- render(): HTMLElement - возвращает элемент формы для отображения на странице.
 
 #### Класс ContactForm
 
 Отображает форму с контактными данными клиента.
 
 Поля класса:
-- form: HTMLElement; - элемент формы.
 - errors: HTMLElement; - элемент ошибки.
 - emailInput: HTMLElement - поле почты.
 - phoneInput: HTMLElement - поле телефона.
 - submitButton: HTMLElement - кнопка отправки формы.
 
-Методы класс:
-- onInputChange(field: keyof T, value: string): void; - обработка изменения в поле формы
+Методы класса:
+- checkFormValidity(): void - проверяет валидность формы.
+- onInputChange(field: keyof T): void; - обработка изменения в поле формы.
+- getFormData(): { email: string; phone: string } - возвращает данные формы.
 - setErrors(value: string): void; - отображает сообщение ошибки.
 - validate(value: boolean): void; - изменяет состояние кнопки.
 - clear(): void; - очистка формы.
+- render(): HTMLElement - возвращает элемент формы для отображения на странице.
 
 #### Класс Success
 
 Отображает форму успешной покупки.
 
 Поля класса:
-- form: HTMLElement; - элемент формы.
-- total: number; - сумма заказа.
+- totalElement: HTMLElement; - элемент суммы заказа.
 - confirmButton: HTMLElement - кнопка подтверждения формы.
 
-Методы класс:
+Методы класса:
 - totalPrice(total: number): void; - отображает сообщение с суммой заказа.
-- clear(): void; - очистка формы.
 
 #### Класс BasketView
 
 Отображает корзину.
 
 Поля класса:
-- items: HTMLElement; - контейнер товаров.
-- totalItems: HTMLElement; - элемент суммы товаров.
-- orderButton: HTMLElement - кнопка заказа.
+- basketContainer: HTMLElement; - контейнер товаров.
+- totalElement: HTMLElement; - элемент суммы товаров.
+- basketButton: HTMLButtonElement; - кнопка корзины.
 
-Методы класс:
-- validate(value: boolean): void; - изменяет состояние кнопки.
+Методы класса:
+- renderBasket(items: HTMLElement[], total: number): void - отрисовывает корзину
+- setButtonDisabled(state: boolean): void - валидация кнопки.
 
 #### Класс Modal
 
 Отвечает за создания универсального модального окна.
 
 Поля класса:
-- container: HTMLElement; - контейнер модального окна.
+- modalContent: HTMLElement; - контейнер модального окна.
+-  closeButton: HTMLButtonElement; - кнока закрытия модального окна.
 
 Методы класса: 
 - open(content: HTMLElement): void; - открыть модальное окно.
 - close(): void; - закрыть модальное окно.
 - setContent(content: HTMLElement): void; - устанавливает контент для модального окна.
-- render(): HTMLElement; - возвращает модальное окно.
 
 ## Слой Презентера (Presenter)
 
@@ -249,14 +275,17 @@ Presenter — это связующее звено между слоями, ко
 ## События
 
 - `catalog:loaded` - список товаров загружен в каталог.
-- `catalog:card_preview` - выбрана карточка товара.
+- `catalog:card_preview` - выбрана или изменена карточка товара.
+- `catalog:basket_open` - открыта корзина.
 - `basket:added` - товар добавлен в корзину.
 - `basket:deleted` - товар удален из корзину.
 - `basket:changed` - данные корзины были изменены.
 - `order:submited` - заказ сформирован.
 - `order:payment_submited` - клиент выбрал вид оплаты и адрес.
-- `order:contats_submited` - клиент заполнил контактные данные.
+- `order:contacts_submited` - клиент заполнил контактные данные.
 - `order:finally` - клиент оформил заказ.
+- `modal:open` - открытие модального окна.
+- `modal:close` - закрытие модального окна.
 
 ## Взаймодействия 
 
