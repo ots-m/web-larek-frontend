@@ -13,7 +13,6 @@ export class AddressForm extends Component<IFormState> {
 	protected submitButton: HTMLButtonElement;
 	protected onlineButton: HTMLElement;
 	protected offlineButton: HTMLElement;
-	private selectedPaymentMethod: TPaymentMethod | null = null;
 
 	constructor(protected container: HTMLElement, protected events: IEvents) {
 		super(container);
@@ -22,22 +21,29 @@ export class AddressForm extends Component<IFormState> {
 		this.onlineButton = container.querySelector('button[name="card"]');
 		this.offlineButton = container.querySelector('button[name="cash"]');
 		this.errors = container.querySelector('.form__errors');
+		this.addressInput.addEventListener('input', () => {
+			this.events.emit('order:change', {
+				key: this.addressInput.name,
+				value: this.addressInput.value,
+			});
+		});
 
-		this.addressInput.addEventListener('input', () => this.checkFormValidity());
-		this.onlineButton.addEventListener('click', () =>
-			this.selectPaymentMethod('online')
-		);
-		this.offlineButton.addEventListener('click', () =>
-			this.selectPaymentMethod('offline')
-		);
+		this.onlineButton.addEventListener('click', () => {
+			this.events.emit('order:change', { key: 'payment', value: 'online' });
+			this.selectPaymentMethod('online');
+		});
+
+		this.offlineButton.addEventListener('click', () => {
+			this.events.emit('order:change', { key: 'payment', value: 'offline' });
+			this.selectPaymentMethod('offline');
+		});
 		this.submitButton.addEventListener('click', (evt) => {
 			evt.preventDefault();
-			this.events.emit('order:payment_submited', this.getFormData());
+			this.events.emit('order:payment_submited');
 		});
 	}
 
 	private selectPaymentMethod(method: TPaymentMethod): void {
-		this.selectedPaymentMethod = method;
 		if (method === 'online') {
 			this.onlineButton.classList.add('button_alt-active');
 			this.offlineButton.classList.remove('button_alt-active');
@@ -45,41 +51,6 @@ export class AddressForm extends Component<IFormState> {
 			this.offlineButton.classList.add('button_alt-active');
 			this.onlineButton.classList.remove('button_alt-active');
 		}
-		this.checkFormValidity();
-	}
-
-	private isAddressFilled(): boolean {
-		return this.addressInput.value.trim() !== '';
-	}
-
-	private isPaymentSelected(): boolean {
-		return this.selectedPaymentMethod !== null;
-	}
-
-	private checkFormValidity(): void {
-		const isValid = this.isAddressFilled() && this.isPaymentSelected();
-
-		this.validate(isValid);
-
-		if (isValid) {
-			this.setErrors('');
-		} else {
-			if (!this.isAddressFilled()) {
-				this.setErrors('Необходимо указать адрес.');
-			} else if (!this.isPaymentSelected()) {
-				this.setErrors('Необходимо выбрать способ оплаты.');
-			}
-		}
-	}
-
-	getFormData(): { address: string; payment: TPaymentMethod } {
-		const payment = this.onlineButton.classList.contains('button_alt-active')
-			? 'online'
-			: 'offline';
-		return {
-			address: this.addressInput.value,
-			payment,
-		};
 	}
 
 	setErrors(value: string): void {
@@ -90,13 +61,20 @@ export class AddressForm extends Component<IFormState> {
 		this.submitButton.disabled = !value;
 	}
 
+	validateForm(errors: { [key: string]: string }): void {
+		const hasErrors = Object.keys(errors).length > 0;
+		this.validate(!hasErrors);
+
+		const firstError = Object.values(errors)[0] || '';
+		this.setErrors(firstError);
+	}
+
 	clear(): void {
 		this.addressInput.value = '';
 		this.setErrors('');
 		this.validate(false);
 		this.onlineButton.classList.remove('button_alt-active');
 		this.offlineButton.classList.remove('button_alt-active');
-		this.selectedPaymentMethod = null;
 	}
 
 	render(): HTMLElement {
@@ -119,64 +97,22 @@ export class ContactForm extends Component<IFormState> {
 		this.errors = container.querySelector('.form__errors');
 
 		this.emailInput.addEventListener('input', () => {
-			this.onInputChange('email');
+			this.events.emit('order:change', {
+				key: this.emailInput.name,
+				value: this.emailInput.value,
+			});
 		});
+
 		this.phoneInput.addEventListener('input', () => {
-			this.onInputChange('phone');
+			this.events.emit('order:change', {
+				key: this.phoneInput.name,
+				value: this.phoneInput.value,
+			});
 		});
 		this.submitButton.addEventListener('click', (evt) => {
 			evt.preventDefault();
-			this.events.emit('order:contacts_submited', this.getFormData());
+			this.events.emit('order:contacts_submited');
 		});
-	}
-
-	private checkFormValidity(): void {
-		const isEmailValid =
-			this.emailInput.validity.valid && this.emailInput.value.trim() !== '';
-		const isPhoneValid = this.phoneInput.value.trim() !== '';
-
-		if (isEmailValid && isPhoneValid) {
-			this.setErrors('');
-			this.validate(true);
-		} else {
-			this.validate(false);
-		}
-	}
-
-	onInputChange<T>(field: keyof T): void {
-		switch (field) {
-			case 'email':
-				if (
-					!this.emailInput.validity.valid ||
-					this.emailInput.value.trim() === ''
-				) {
-					this.setErrors('Необходимо ввести корректный email.');
-					this.validate(false);
-				} else {
-					this.setErrors('');
-					this.checkFormValidity();
-				}
-				break;
-			case 'phone':
-				if (this.phoneInput.value.trim() === '') {
-					this.setErrors('Необходимо ввести телефон.');
-					this.validate(false);
-				} else {
-					this.setErrors('');
-					this.checkFormValidity();
-				}
-				break;
-			default:
-				this.checkFormValidity();
-				break;
-		}
-	}
-
-	getFormData(): { email: string; phone: string } {
-		return {
-			email: this.emailInput.value,
-			phone: this.phoneInput.value,
-		};
 	}
 
 	setErrors(value: string): void {
@@ -185,6 +121,14 @@ export class ContactForm extends Component<IFormState> {
 
 	validate(value: boolean): void {
 		this.submitButton.disabled = !value;
+	}
+
+	validateForm(errors: { [key: string]: string }): void {
+		const hasErrors = Object.keys(errors).length > 0;
+		this.validate(!hasErrors);
+
+		const firstError = Object.values(errors)[0] || '';
+		this.setErrors(firstError);
 	}
 
 	clear(): void {

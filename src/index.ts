@@ -55,7 +55,6 @@ api
 	.getProductCatalog()
 	.then((data) => {
 		appState.catalog = data.items;
-		events.emit('catalog:loaded');
 	})
 	.catch((err) => console.log(err));
 
@@ -107,14 +106,17 @@ events.on('order:submited', () => {
 	modal.open(addressForm.render());
 });
 
+events.on('order:change', (data: { key: string; value: string }) => {
+	appState.changeOrder(data.key, data.value);
+	console.log(appState.order);
+});
+
 events.on('order:payment_submited', () => {
 	contactsForm.clear();
-	appState.order = addressForm.getFormData();
 	modal.open(contactsForm.render());
 });
 
 events.on('order:contacts_submited', () => {
-	appState.order = contactsForm.getFormData();
 	const orderData = {
 		...(appState.order as IOrder),
 		total: appState.getBasketTotal(),
@@ -125,13 +127,23 @@ events.on('order:contacts_submited', () => {
 		.then(() => {
 			successForm.totalPrice(appState.getBasketTotal());
 			modal.open(successForm.render());
+			appState.clearBasket();
+			appState.clearOrder();
 		})
 		.catch((err) => console.log(err));
 });
 
 events.on('order:finally', () => {
-	appState.clearBasket();
 	modal.close();
+});
+
+events.on('address_form:errors:show', (errors: { [key: string]: string }) => {
+	addressForm.validateForm(errors);
+	console.log(errors);
+});
+
+events.on('contacts_form:errors:show', (errors: { [key: string]: string }) => {
+	contactsForm.validateForm(errors);
 });
 
 events.on('modal:open', () => {

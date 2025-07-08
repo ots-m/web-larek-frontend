@@ -144,10 +144,10 @@ yarn build
 Поля класса:
 - _catalog: IProduct[] - массив всех товаров.
 - _basket: IProduct[] - товары в корзине.
-- _order: object - данные заказа.
+- _order: Partial<IOrder> - данные заказа.
 
 Методы класса: 
-- addToBasket(item: IProduct): void - добавляет товар в корзину
+- addToBasket(item: IBasketIndex): void - добавляет товар в корзину
 - removeFromBasket(id: string): void - удаляет товар из корзины
 - isInBasket(id: string): boolean - проверяет не добавлен ли товар в корзину.
 - get basket(): IBasketIndex[] - получает список товаров в корзине.
@@ -155,9 +155,13 @@ yarn build
 - getBasketTotal(): number; - возвращает сумму товаров в корзине.
 - getBasketCount(): number; - возвращает количество товаров в корзине.
 - set catalog(items: IProduct[]) - установить список товаров в каталоге.
-- get catalog(): IProduct[] - получить список товаров в каталоге
-- set order(data: Partial\<IOrder>) - устанавливает данные заказа, частично или полностью.
+- get catalog(): IProduct[] - получает список товаров в каталоге
+- clearOrder(): void - очищает данные заказа.
+- changeOrder(key: string, value: any): void - обновляет отдельное поле в данных заказа и вызывает валидацию.
+- validate(): void - метод для проверки данных заказа и отображения ошибок в формах.
 - get order() - возвращает данные заказа.
+- validateAddressForm(): { [key: string]: string } - проверяет корректность адреса и способа оплаты.
+- validateContactsForm(): { [key: string]: string } - проверяет корректность email и телефона.
 
 ### Cлой отображения (View)
 
@@ -199,12 +203,9 @@ yarn build
 
 Методы класса:
 - selectPaymentMethod(method: TPaymentMethod): void - устанавливает классы элементов.
-- isAddressFilled(): boolean - проверяет, заполнен ли адрес.
-- isPaymentSelected(): boolean -  проверяет, выбран ли способ оплаты.
-- checkFormValidity(): void - проверяет валидность формы.
-- getFormData(): { address: string; payment: TPaymentMethod } - возвращает данные формы.
 - setErrors(value: string): void; - отображает сообщение ошибки.
 - validate(value: boolean): void; - изменяет состояние кнопки.
+- validateForm(errors: { [key: string]: string }): void - проверяет форму на валидацию.
 - clear(): void; - очистка формы.
 - render(): HTMLElement - возвращает элемент формы для отображения на странице.
 
@@ -219,11 +220,9 @@ yarn build
 - submitButton: HTMLElement - кнопка отправки формы.
 
 Методы класса:
-- checkFormValidity(): void - проверяет валидность формы.
-- onInputChange(field: keyof T): void; - обработка изменения в поле формы.
-- getFormData(): { email: string; phone: string } - возвращает данные формы.
 - setErrors(value: string): void; - отображает сообщение ошибки.
 - validate(value: boolean): void; - изменяет состояние кнопки.
+- validateForm(errors: { [key: string]: string }): void - проверяет форму на валидацию.
 - clear(): void; - очистка формы.
 - render(): HTMLElement - возвращает элемент формы для отображения на странице.
 
@@ -280,12 +279,15 @@ Presenter — это связующее звено между слоями, ко
 - `basket:added` - товар добавлен в корзину.
 - `basket:deleted` - товар удален из корзину.
 - `basket:changed` - данные корзины были изменены.
+- `order:change` - данные заказа были изменены.
 - `order:submited` - заказ сформирован.
 - `order:payment_submited` - клиент выбрал вид оплаты и адрес.
 - `order:contacts_submited` - клиент заполнил контактные данные.
 - `order:finally` - клиент оформил заказ.
 - `modal:open` - открытие модального окна.
 - `modal:close` - закрытие модального окна.
+- `address_form:errors:show` - валидация формы с адресом.
+- `contacts_form:errors:show` - валидация формы с контактами.
 
 ## Взаймодействия 
 

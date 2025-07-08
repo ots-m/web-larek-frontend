@@ -16,13 +16,11 @@ export class Success extends Component<ISuccess> {
 		this.successButton = container.querySelector('.order-success__close');
 
 		this.successButton.addEventListener('click', (evt) => {
-			evt.preventDefault();
 			events.emit('order:finally');
-		})
+		});
 	}
 
 	totalPrice(total: number): void {
 		this.setText(this.totalElement, `Списано ${total} синапсов`);
 	}
-
 }
