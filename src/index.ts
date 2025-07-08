@@ -108,7 +108,6 @@ events.on('order:submited', () => {
 
 events.on('order:change', (data: { key: string; value: string }) => {
 	appState.changeOrder(data.key, data.value);
-	console.log(appState.order);
 });
 
 events.on('order:payment_submited', () => {
